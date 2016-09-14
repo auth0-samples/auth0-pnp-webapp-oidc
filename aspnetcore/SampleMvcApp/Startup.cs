@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -9,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 
 namespace SampleMvcApp
 {
@@ -72,7 +74,7 @@ namespace SampleMvcApp
             app.UseOpenIdConnectAuthentication(new OpenIdConnectOptions("Auth0")
             {
                 // Set the authority to your Auth0 domain
-                Authority = $"https://{auth0Settings.Value.Domain}",
+                Authority = $"https://{auth0Settings.Value.Domain}/",
 
                 // Configure the Auth0 Client ID and Client Secret
                 ClientId = auth0Settings.Value.ClientId,
@@ -99,6 +101,8 @@ namespace SampleMvcApp
                 {
                     OnTicketReceived = context =>
                     {
+                        var options = context.Options as OpenIdConnectOptions;
+
                         // Get the ClaimsIdentity
                         var identity = context.Principal.Identity as ClaimsIdentity;
                         if (identity != null)
@@ -106,7 +110,7 @@ namespace SampleMvcApp
                             // Add the Name ClaimType. This is required if we want User.Identity.Name to actually return something!
                             if (!context.Principal.HasClaim(c => c.Type == ClaimTypes.Name) &&
                                 identity.HasClaim(c => c.Type == "name"))
-                                identity.AddClaim(new Claim(ClaimTypes.Name, identity.FindFirst("name").Value));
+                                identity.AddClaim(new Claim(ClaimTypes.Name, identity.FindFirst("name").Value, ClaimValueTypes.String, options.Authority));
 
                             // Check if token names are stored in Properties
                             if (context.Properties.Items.ContainsKey(".TokenNames"))
@@ -120,7 +124,21 @@ namespace SampleMvcApp
                                     // Tokens are stored in a Dictionary with the Key ".Token.<token name>"
                                     string tokenValue = context.Properties.Items[$".Token.{tokenName}"];
 
-                                    identity.AddClaim(new Claim(tokenName, tokenValue));
+                                    identity.AddClaim(new Claim(tokenName, tokenValue, ClaimValueTypes.String, options.Authority));
+                                }
+                            }
+
+                            // Add the groups as roles
+                            var authzClaim = context.Principal.FindFirst(c => c.Type == "authorization");
+                            if (authzClaim != null)
+                            {
+                                var authorization = JsonConvert.DeserializeObject<Auth0Authorization>(authzClaim.Value);
+                                if (authorization != null)
+                                {
+                                    foreach (var group in authorization.Groups)
+                                    {
+                                        identity.AddClaim(new Claim(ClaimTypes.Role, group, ClaimValueTypes.String, options.Authority));
+                                    }
                                 }
                             }
                         }
