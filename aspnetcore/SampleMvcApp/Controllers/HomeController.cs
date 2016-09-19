@@ -16,12 +16,6 @@ namespace SampleMvcApp.Controllers
             return View();
         }
 
-        [Authorize(Roles = "Admin")]
-        public IActionResult Admin()
-        {          
-            return View();
-        }
-
         public IActionResult Error()
         {
             return View();

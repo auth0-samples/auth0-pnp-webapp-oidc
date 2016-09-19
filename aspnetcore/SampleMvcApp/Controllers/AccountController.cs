@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
+﻿using System;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using SampleMvcApp.ViewModels;
 using System.Linq;
+using System.Net.Http;
 using System.Security.Claims;
 
 namespace SampleMvcApp.Controllers
