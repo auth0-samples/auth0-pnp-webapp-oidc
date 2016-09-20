@@ -7,6 +7,7 @@ using SampleMvcApp.ViewModels;
 using System.Linq;
 using System.Net.Http;
 using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace SampleMvcApp.Controllers
 {
@@ -18,12 +19,12 @@ namespace SampleMvcApp.Controllers
         }
 
         [Authorize]
-        public IActionResult Logout()
+        public async Task Logout()
         {
-            HttpContext.Authentication.SignOutAsync("Auth0");
-            HttpContext.Authentication.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            await HttpContext.Authentication.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            await HttpContext.Authentication.SignOutAsync("Auth0");
 
-            return RedirectToAction("Index", "Home");
+            //return RedirectToAction("Index", "Home");
         }
 
         [Authorize]

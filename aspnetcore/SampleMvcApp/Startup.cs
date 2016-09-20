@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Newtonsoft.Json;
 
 namespace SampleMvcApp
@@ -99,6 +100,13 @@ namespace SampleMvcApp
 
                 Events = new OpenIdConnectEvents
                 {
+                    OnRedirectToIdentityProviderForSignOut = context =>
+                    {
+                        context.Response.Redirect($"https://{auth0Settings.Value.Domain}/v2/logout?client_id={auth0Settings.Value.ClientId}&returnTo=http://localhost:60856/");
+                        context.HandleResponse();
+
+                        return Task.FromResult(0);
+                    },
                     OnTicketReceived = context =>
                     {
                         var options = context.Options as OpenIdConnectOptions;
