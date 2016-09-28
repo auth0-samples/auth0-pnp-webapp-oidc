@@ -95,14 +95,11 @@ namespace SampleMvcApp
                 // Configure the Claims Issuer to be Auth0
                 ClaimsIssuer = "Auth0",
 
-                // Saves tokens to the AuthenticationProperties
-                SaveTokens = true,
-
                 Events = new OpenIdConnectEvents
                 {
                     OnRedirectToIdentityProviderForSignOut = context =>
                     {
-                        context.Response.Redirect($"https://{auth0Settings.Value.Domain}/v2/logout?client_id={auth0Settings.Value.ClientId}&returnTo=http://localhost:60856/");
+                        context.Response.Redirect($"https://{auth0Settings.Value.Domain}/v2/logout?client_id={auth0Settings.Value.ClientId}&returnTo={context.Request.Scheme}://{context.Request.Host}/");
                         context.HandleResponse();
 
                         return Task.FromResult(0);
@@ -119,22 +116,6 @@ namespace SampleMvcApp
                             if (!context.Principal.HasClaim(c => c.Type == ClaimTypes.Name) &&
                                 identity.HasClaim(c => c.Type == "name"))
                                 identity.AddClaim(new Claim(ClaimTypes.Name, identity.FindFirst("name").Value, ClaimValueTypes.String, options.Authority));
-
-                            // Check if token names are stored in Properties
-                            if (context.Properties.Items.ContainsKey(".TokenNames"))
-                            {
-                                // Token names a semicolon separated
-                                string[] tokenNames = context.Properties.Items[".TokenNames"].Split(';');
-
-                                // Add each token value as Claim
-                                foreach (var tokenName in tokenNames)
-                                {
-                                    // Tokens are stored in a Dictionary with the Key ".Token.<token name>"
-                                    string tokenValue = context.Properties.Items[$".Token.{tokenName}"];
-
-                                    identity.AddClaim(new Claim(tokenName, tokenValue, ClaimValueTypes.String, options.Authority));
-                                }
-                            }
 
                             // Add the groups as roles
                             var authzClaim = context.Principal.FindFirst(c => c.Type == "authorization");
